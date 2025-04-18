@@ -30,6 +30,11 @@ GRANT REPLICATION SLAVE ON *.* TO 'replicator'@'%';
 FLUSH PRIVILEGES;
 ```
 
+```sql
+ALTER USER 'replicator'@'%' IDENTIFIED WITH mysql_native_password BY 'passwordku';
+FLUSH PRIVILEGES;
+```
+
 ---
 
 ### 3. **Ambil posisi binlog secara konsisten menggunakan `mysqldump`**
