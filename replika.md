@@ -110,6 +110,14 @@ CHANGE REPLICATION SOURCE TO
 START REPLICA;
 ```
 
+Jika gagal jalankan di server utama
+
+```sql
+GRANT REPLICATION SLAVE ON *.* TO 'replicator'@'%';
+FLUSH PRIVILEGES;
+FLUSH HOSTS;
+```
+
 ---
 
 ### 8. **Cek Status Replikasi**
@@ -120,6 +128,23 @@ SHOW REPLICA STATUS\G
 Pastikan:
 - `Replica_IO_Running: Yes`
 - `Replica_SQL_Running: Yes`
+
+
+
+set di server replika supaya hanya spesifik db
+```ini
+# /etc/mysql/mysql.conf.d/mysqld.cnf
+[mysqld]
+replicate_do_db = namadbnya
+```
+
+
+
+```bash
+#!/bin/bash
+STATUS=$(mysql -u root -e "SHOW REPLICA STATUS\G" 2>/dev/null)
+echo "$STATUS" | grep -E "Running|Behind|Error"
+```
 
 ---
 
