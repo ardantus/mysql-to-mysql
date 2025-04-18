@@ -36,10 +36,10 @@ FLUSH PRIVILEGES;
 Ini bagian penting agar kamu **tidak perlu lock terlalu lama**:
 
 ```bash
-mysqldump -u root -p \
+mysqldump -u root \
   --databases db_system \
   --single-transaction \
-  --master-data=2 \
+  --source-data=2 \
   --triggers --routines --events \
   > db_system.sql
 ```
