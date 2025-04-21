@@ -43,14 +43,14 @@ services:
       - mysql2
       - mysql3
     volumes:
-      - ./router/conf.d:/etc/mysqlrouter
+      - ./router/conf.d:/etc/mysqlrouter/conf.d
     networks:
       - mysqlnet
     ports:
-      - "6446:6446"  # MySQL read/write port
-      - "6447:6447"  # MySQL read-only port
-      - "6448:6448"  # MySQL admin port
-
+      - "6446:6446"  
+      - "6447:6447"  
+    entrypoint: ["mysqlrouter"]
+    command: []
     
   wordpress:
     image: wordpress:latest
