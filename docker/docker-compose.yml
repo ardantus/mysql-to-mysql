@@ -1,0 +1,76 @@
+services:
+  mysql1:
+    image: mysql:8.0
+    container_name: mysql1
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: wordpress
+    volumes:
+      - ./mysql/conf.d/mysql1.cnf:/etc/mysql/conf.d/my.cnf
+      - mysql1_data:/var/lib/mysql
+    networks:
+      - mysqlnet
+
+  mysql2:
+    image: mysql:8.0
+    container_name: mysql2
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+    volumes:
+      - ./mysql/conf.d/mysql2.cnf:/etc/mysql/conf.d/my.cnf
+      - mysql2_data:/var/lib/mysql
+    networks:
+      - mysqlnet
+
+  mysql3:
+    image: mysql:8.0
+    container_name: mysql3
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+    volumes:
+      - ./mysql/conf.d/mysql3.cnf:/etc/mysql/conf.d/my.cnf
+      - mysql3_data:/var/lib/mysql
+    networks:
+      - mysqlnet
+
+  router:
+    image: mysql/mysql-router:8.0
+    container_name: mysql-router
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+    depends_on:
+      - mysql1
+      - mysql2
+      - mysql3
+    volumes:
+      - ./router/conf.d:/etc/mysqlrouter
+    networks:
+      - mysqlnet
+    ports:
+      - "6446:6446"  # MySQL read/write port
+      - "6447:6447"  # MySQL read-only port
+      - "6448:6448"  # MySQL admin port
+
+    
+  wordpress:
+    image: wordpress:latest
+    container_name: wordpress
+    environment:  
+      WORDPRESS_DB_HOST: mysql-router:6446
+      WORDPRESS_DB_USER: root
+      WORDPRESS_DB_PASSWORD: rootpass
+      WORDPRESS_DB_NAME: wordpress
+    ports:
+      - "8080:80"
+    depends_on:
+      - router
+    networks:
+      - mysqlnet
+
+volumes:
+  mysql1_data:
+  mysql2_data:
+  mysql3_data:
+
+networks:
+  mysqlnet:
