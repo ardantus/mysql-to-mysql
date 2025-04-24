@@ -11,6 +11,7 @@ EOF
 echo "🛡️  Menambahkan GPG key MySQL..."
 curl -fsSL https://repo.mysql.com/RPM-GPG-KEY-mysql-2022 | gpg --dearmor -o /etc/apt/trusted.gpg.d/mysql.gpg
 
+apt-key adv --keyserver keyserver.ubuntu.com --recv-keys B7B3B788A8D3785C
 echo "🔄 Menjalankan apt update..."
 apt-get update
 
