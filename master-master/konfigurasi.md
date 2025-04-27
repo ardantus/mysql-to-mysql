@@ -136,7 +136,7 @@ dba.configureInstance('clusteradmin@10.10.10.94:3306')
 dba.configureInstance('clusteradmin@10.10.10.36:3306')
 
 
-
+SELECT * FROM performance_schema.replication_group_members;
 
 
 CREATE USER 'clusteradmin'@'%' IDENTIFIED BY 'BhX03Jkrrk0!Su41loBa';
@@ -307,3 +307,87 @@ mysql -u wp -p -h 127.0.0.1 -P 6446 wordpress
 
 mysql -u wp -p -h 127.0.0.1 -P 6446  # should go to PRIMARY
 mysql -u wp -p -h 127.0.0.1 -P 6447  # should go to SECONDARY (round robin)
+
+
+
+### Troubleshot cluster ###
+mysqlsh --uri clusteradmin@localhost:3306 --js
+var cluster = dba.getCluster()
+cluster.status()
+
+
+
+
+
+DROP USER IF EXISTS 'repl'@'10.10.10.20';
+DROP USER IF EXISTS 'repl'@'host-10-10-10-20.openstacklocal';
+
+CREATE USER 'repl'@'10.10.10.20' IDENTIFIED BY 'BhX03Jkrrk0!Su41loBa';
+CREATE USER 'repl'@'host-10-10-10-20.openstacklocal' IDENTIFIED BY 'BhX03Jkrrk0!Su41loBa';
+
+GRANT REPLICATION SLAVE, REPLICATION CLIENT ON *.* TO 'repl'@'10.10.10.20';
+GRANT REPLICATION SLAVE, REPLICATION CLIENT ON *.* TO 'repl'@'host-10-10-10-20.openstacklocal';
+
+FLUSH PRIVILEGES;
+CREATE USER 'repl'@'10.10.10.20' IDENTIFIED BY 'BhX03Jkrrk0!Su41loBa';
+GRANT REPLICATION SLAVE, REPLICATION CLIENT ON *.* TO 'repl'@'10.10.10.20';
+
+
+
+SET GLOBAL super_read_only = OFF;
+
+DROP USER IF EXISTS 'repl'@'%';
+CREATE USER 'repl'@'%' IDENTIFIED BY 'BhX03Jkrrk0!Su41loBa';
+GRANT REPLICATION SLAVE, REPLICATION CLIENT ON *.* TO 'repl'@'%';
+FLUSH PRIVILEGES;
+
+
+
+### recovery ###
+var cluster = dba.getCluster('mycluster');
+
+// Langkah 1: Hapus dulu
+cluster.removeInstance("admincluster@10.10.10.20:3306", { force: true });
+
+// Langkah 2: Tambahkan kembali dengan metode clone
+cluster.addInstance(
+  "admincluster@10.10.10.20:3306",
+  {
+    recoveryMethod: "clone",
+    password: "BhX03Jkrrk0!Su41loBa"
+  }
+);
+
+CREATE USER 'clusteradmin'@'10.10.10.177' IDENTIFIED BY 'BhX03Jkrrk0!Su41loBa';
+GRANT ALL PRIVILEGES ON *.* TO 'clusteradmin'@'10.10.10.177' WITH GRANT OPTION;
+FLUSH PRIVILEGES;
+
+CREATE USER 'clusteradmin'@'10.10.10.126' IDENTIFIED BY 'BhX03Jkrrk0!Su41loBa';
+GRANT ALL PRIVILEGES ON *.* TO 'clusteradmin'@'10.10.10.126' WITH GRANT OPTION;
+FLUSH PRIVILEGES;
+
+
+
+CREATE USER 'admincluster'@'10.10.10.177' IDENTIFIED BY 'BhX03Jkrrk0!Su41loBa';
+GRANT ALL PRIVILEGES ON *.* TO 'admincluster'@'10.10.10.177' WITH GRANT OPTION;
+FLUSH PRIVILEGES;
+
+CREATE USER 'admincluster'@'10.10.10.126' IDENTIFIED BY 'BhX03Jkrrk0!Su41loBa';
+GRANT ALL PRIVILEGES ON *.* TO 'admincluster'@'10.10.10.126' WITH GRANT OPTION;
+FLUSH PRIVILEGES;
+
+
+mysqlsh --uri clusteradmin@10.10.10.94:3306
+dba.configureInstance("clusteradmin@10.10.10.177:3306", { password: "BhX03Jkrrk0!Su41loBa" })
+dba.configureInstance("clusteradmin@10.10.10.126:3306", { password: "BhX03Jkrrk0!Su41loBa" })
+var cluster = dba.getCluster('mycluster')
+
+cluster.addInstance("clusteradmin@10.10.10.177:3306", {
+  recoveryMethod: "clone",
+  password: "BhX03Jkrrk0!Su41loBa"
+})
+
+cluster.addInstance("clusteradmin@10.10.10.126:3306", {
+  recoveryMethod: "clone",
+  password: "BhX03Jkrrk0!Su41loBa"
+})
